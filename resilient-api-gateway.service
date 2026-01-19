@@ -1,0 +1,28 @@
+[Unit]
+Description=Resilient API Gateway (Docker Compose)
+Requires=docker.service
+After=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+User=deploy
+WorkingDirectory=/opt/resilient-api-gateway
+ExecStart=/usr/local/bin/docker-compose -f docker-compose.prod.yml up -d
+ExecStop=/usr/local/bin/docker-compose -f docker-compose.prod.yml down
+RemainAfterExit=yes
+Restart=always
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Resource limits
+MemoryMax=2G
+CPUQuota=100%
+
+[Install]
+WantedBy=multi-user.target

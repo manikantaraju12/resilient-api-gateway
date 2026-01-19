@@ -1,0 +1,83 @@
+groups:
+  - name: api-gateway
+    interval: 30s
+    rules:
+      # High rate limit rejection rate
+      - alert: HighRateLimitRejections
+        expr: rate(http_requests_429_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate of 429 responses from API Gateway"
+          description: "{{ $value }} requests/sec are being rate-limited"
+
+      # Circuit breaker frequently open
+      - alert: CircuitBreakerFrequentlyOpen
+        expr: rate(circuit_breaker_open_total[5m]) > 0.05
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Circuit breaker opening frequently"
+          description: "Upstream service may be unstable"
+
+      # Upstream service high error rate
+      - alert: UpstreamHighErrorRate
+        expr: rate(http_requests_500_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate from upstream service"
+          description: "{{ $value }} errors/sec detected"
+
+      # Redis memory usage high
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage is high"
+          description: "Redis is using {{ $value | humanizePercentage }} of max memory"
+
+      # Response time increasing
+      - alert: HighResponseLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p95 response latency"
+          description: "{{ $value | humanizeDuration }} detected"
+
+      # Service down
+      - alert: ServiceDown
+        expr: up{job="api-gateway"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API Gateway service is down"
+          description: "Service has been unreachable for 1 minute"
+
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "Process CPU usage is {{ $value | humanizePercentage }}"
+
+      # Request queue building up
+      - alert: HighRequestQueueDepth
+        expr: http_requests_in_progress > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Large request queue detected"
+          description: "{{ $value }} requests are queued"
